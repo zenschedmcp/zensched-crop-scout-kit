@@ -4,7 +4,7 @@ Setup is about 15 minutes, once. After that everything is plain English to your 
 
 You need: Claude Desktop (or Cursor) and [Node.js LTS](https://nodejs.org/) installed. Nothing else.
 
-Before you start, read the "What this kit is not" section of `README.md`. Short version: this is GPS-verified field-corner proof plus a local extract of the Scout Record. It is **not** a CCA recommendation and **not** a spray log.
+Before you start, read the "What this kit is not" section of `README.md`. Short version: this is GPS-verified field-corner proof plus a local extract of the Scout Record. It is **not** a CCA recommendation, **not** a receituário or official agronomic prescription, **not** a NAPIS filing, and **not** a spray log.
 
 ## 1. Make a data folder
 
@@ -95,5 +95,5 @@ Marks it paid.
 
 ## What next
 
-- `README.md` for the full explanation, the recommendation / spray-log boundary, troubleshooting table, and developer notes
+- `README.md` for the full explanation, the recommendation / receituário / NAPIS / spray-log boundary, troubleshooting table, and developer notes
 - `example-workflow.md` to see the exact tool calls behind each step above

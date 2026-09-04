@@ -12,8 +12,8 @@ If you *are* a developer, skip to [For developers](#for-developers).
 
 **What it is not:**
 
-- **Not a CCA / PCA written recommendation.** `scout_log` is *your* copy of what the scout typed on the phone (date, field, stage, pest, count). It is not a recommendation, not a threshold decision, and not agronomic advice the grower can spray from. If they need a written rec, you still write it on your own letterhead.
-- **Not a pesticide-use log.** This kit does not produce a FIFRA, state applicator, or farm spray record. Counts on the Scout Record are observations, not products applied.
+- **Not a CCA / PCA written recommendation, not a receituário, and not an official agronomic prescription.** `scout_log` is *your* copy of what the scout typed on the phone (date, field, stage, pest, count). It is not a recommendation, not a threshold decision, not a Brazilian **receituário agronômico** (Lei 14.785/2023 / Confea Resolução 1.149/2025), and not a prescription a grower can spray from. If they need a written rec, you still write it on your own letterhead / CREA form.
+- **Not a pesticide-use log and not a NAPIS filing.** This kit does not produce a FIFRA, state applicator, or farm spray record, and it is not a NAPIS / official pest-survey submission. Counts on the Scout Record are observations, not products applied and not a regulatory report.
 - **Not NDVI, yield, or satellite.** There is no imagery pipeline, no stand-count AI, and no yield model. A stand-count visit is the same Scout Record with `pest_type` = None and a count in `pest_count` if you want to reuse the number field that way — or just notes after the fact.
 - **Not a signed legal document.** The Scout Record has no signature field. On ZenSched a signature field replaces the Submit button, so adding one would make every walk look like the scout had signed something. Submitting the form is just submitting the form.
 
@@ -44,7 +44,7 @@ If any of those is a deal-breaker, this kit is not for you. If you want weekly f
 
 ### Privacy note
 
-Gate codes, muddy-approach notes, "park at the south corner," and CCA / PCA license numbers are stored only in `fields.access_notes` and `scouts.license_no` in the local database. `SKILL.md` forbids the AI from putting them into any ZenSched field. Give them to your scout yourself, by whatever channel you trust. ZenSched only ever sees the field label and the GPS corner.
+Gate codes, muddy-approach notes, "park at the south corner," CCA / PCA license numbers, and **grower / farm / person names** are stored only in the local database. `SKILL.md` forbids the AI from putting them into any ZenSched field. Give approach notes to your scout yourself, by whatever channel you trust. ZenSched only ever sees the field label (`{field code} - {road}`, never the grower) and the GPS corner.
 
 ## How it works day to day
 
@@ -181,7 +181,7 @@ When you invite a scout, they get an email, install the app, and can immediately
 | `SQLITE_PATH` points nowhere / "unable to open database" | Folder from step 1 does not exist | Create the folder; the file is created automatically but the folder is not |
 | ZenSched tools return an auth error | Key still says `zsc_your_key_here`, or was pasted with a space | Re-paste the key, restart |
 | `payment_required` | Metered call with no balance | Follow the instructions in the response; $5 deposit |
-| AI creates shifts at the wrong hour | Timezone not set | "Set my timezone offset to -05:00 in settings" (use your own offset) |
+| AI creates shifts at the wrong hour | Timezone not set, or daylight saving changed and `timezone_offset` was not updated | "Set my timezone offset to -05:00 in settings" (use your own offset). US/AU clocks move; Brazil and India do not. After the first Sunday of November, Ames Central is `-06:00`. |
 | Shift creation fails for dates a couple of months out | The field's 60-day ZenSched event has expired | Say "renew the events"; the AI runs the roll-over in `SKILL.md` and retries |
 | Scout's check-in not GPS-verified at the field | Pin is the wrong corner, or the default ~300 ft circle is too small | Ask the AI to widen `checkin_radius_m` with `policy_update` (not on the field), or run `location_update` to the right corner (free) |
 | Pin landed on the county road / farm mailbox | `location_create` was given a street address, which ignores lat/lng | Recreate or `location_update` with the GPS corner only; leave `street_address` empty |
@@ -199,10 +199,10 @@ If something is confusing or broken in ZenSched itself, ask the AI to call `feed
 
 **Data model decisions.**
 
-- One ZenSched **location** per field, permanent, stored on `fields.zensched_location_id` as an integer. Created with `location_create(name, lat=..., lng=..., checkin_radius_m=200, idempotency_key=...)` and **no** `street_address` so `pin_quality` is `client` (the GPS corner). Passing a farm 911 / road string geocodes the road and **ignores** lat/lng. `name` is limited to 50 characters; `field_label` is `{farm short} - {field}`. `checkin_radius_m` on `location_create` is informational; the enforced radius is `policy_update(0, '{"checkin_radius_m": N}')`, and with geofencing on the platform raises values under 100 m to 300 ft — too tight for a field. Kits must say "widen the radius with policy_update", never "on that field".
+- One ZenSched **location** per field, permanent, stored on `fields.zensched_location_id` as an integer. Created with `location_create(name, lat=..., lng=..., checkin_radius_m=200, idempotency_key=...)` and **no** `street_address` so `pin_quality` is `client` (the GPS corner). Passing a farm 911 / road string geocodes the road and **ignores** lat/lng. `name` is limited to 50 characters; `field_label` is `{field code} - {road}` (e.g. `North 80` or `South 40 - County road 15`), **never the grower or farm name**. `checkin_radius_m` on `location_create` is informational; the enforced radius is `policy_update(0, '{"checkin_radius_m": N}')`, and with geofencing on the platform raises values under 100 m to 300 ft — too tight for a field. Kits must say "widen the radius with policy_update", never "on that field".
 - **Events are capped at 60 days by ZenSched**, so an event cannot be a permanent season template. Each field holds its *current* event in `fields.zensched_event_id` and its last covered date in `fields.event_valid_until`. The agent creates a new event (`event_create(location_id, title="Scout - <field_name>", start_date, end_date=start+59 days, idempotency_key="event-field-{field_id}-{YYYYMMDD}")`) whenever a shift date is later than `event_valid_until`, calls `form_assign(form_id, event_id=...)` on it, and updates the row. `fields_due` exposes `event_needs_roll` per row and `events_expiring` lists fields due for renewal within 14 days. Shifts already created on the old event remain valid. When recording a completed visit whose `event_id` no longer matches a field, the agent falls back to `event_get(event_id).location_id` against `fields.zensched_location_id`.
 - **Cadence is per field, not per grower.** A farm often has a weekly corn field and an on-demand soy field. `fields.service_frequency` is `weekly | biweekly | monthly | seasonal | on-demand`. `fields_due` is every active field with `next_service_date <= today+7` joined to its active grower, emitting `start_iso` / `end_iso` (preferred start or `settings.default_shift_start`, duration from the service or `default_shift_minutes`) and the shift `idempotency_key`. Two fields on the same grower produce two rows.
-- **The `advance_service_date_on_visit` trigger** sets `last_service_date` and `next_service_date` on every visit insert: +7 / +14 / +1 month / **+90 days** / NULL. Seasonal is +90 days, not `+3 months`, so the interval does not drift with month length. Recording a one-off on a recurring field also moves the cadence; `SKILL.md` tells the agent to set the date back if the owner says so.
+- **The `advance_service_date_on_visit` trigger** sets `last_service_date` and `next_service_date` on every visit insert: +7 / +14 / +1 month / **+90 days** / NULL. Seasonal is +90 days, not `+3 months`, so the interval does not drift with month length. That +90 is the *local* next-walk date only — the ZenSched event is still ≤60 days and must roll (`event_needs_roll`) before a shift 90 days out. Never create one 90-day event. Recording a one-off on a recurring field also moves the cadence; `SKILL.md` tells the agent to set the date back if the owner says so.
 - Rate lives on the **field** (`service_rate`) so a shop can charge off-list per field. `fields.service_id` is the default; `visits.service_id` is what was actually done (a weekly field-scout field can still get a `disease_scout` visit).
 - `visits.zensched_shift_id` and `scouts.zensched_worker_id` are integer `UNIQUE`. `visits.report_dc_id` holds the form `submission_id`. `growth_stage` and `pest_type` are `CHECK`-constrained to the form's option labels. `pest_count` is the number as typed.
 - `fill_visit_scout` sets `scout_id` from `zensched_worker_id` when the agent leaves it NULL.
@@ -217,13 +217,13 @@ If something is confusing or broken in ZenSched itself, ask the AI to call `feed
 
 - location: `loc-field-{field_id}`
 - event: `event-field-{field_id}-{YYYYMMDD window start}`
-- shift: `shift-field-{field_id}-{YYYYMMDD}`
+- shift: `shift-field-{field_id}-{YYYYMMDD}` for the first walk that day; a same-day second walk, a scout swap, or any replacement after `shift_cancel` appends `-2`, `-3`, … so a cancelled key is never reused (ZenSched replays the cached response for 24 hours)
 - worker: `worker-{email}`
 - form: `form-scout-record`; assignment: `assign-scout-record-{event_id}`
 
 ZenSched caches idempotent responses for 24 hours.
 
-**Timestamps.** `shift_create` takes `start` and `end` in ISO 8601 with an explicit offset. Always use the business's local offset from `settings.timezone_offset` (e.g. `2026-09-07T07:00:00-05:00`), never `Z`. The view builds these strings so the agent does not have to.
+**Timestamps.** `shift_create` takes `start` and `end` in ISO 8601 with an explicit offset. Always use the business's local offset from `settings.timezone_offset` (e.g. `2026-09-07T07:00:00-05:00`), never `Z`. The view builds these strings so the agent does not have to. The offset is a fixed setting, not a zone name, so it must be updated when daylight-saving time starts or ends (`SKILL.md` rule 8; `example-workflow.md` shows the November flip to `-06:00` for Ames). Brazil and India have no DST.
 
 **Metered reads.** `form_submissions` and `form_export` bill $0.05 per submission read ($0.15 with media); `form_export` is preferred for a week at a time. The kit stores the summary and media URLs on `visits` on first read so later scout-log questions are answered from SQLite. `shift_list`, `shift_status`, `event_get`, and `timesheet_export(mode="hours"|"raw")` are free.
 
