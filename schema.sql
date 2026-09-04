@@ -16,11 +16,13 @@
 -- Every statement is idempotent (IF NOT EXISTS / INSERT OR IGNORE), so it is
 -- safe to run this file again on an existing database.
 --
--- NOT A RECOMMENDATION AND NOT A SPRAY LOG. scout_log is the owner's local
--- extract of growth stage, pest count, and pest type from the Scout Record.
--- It is not a CCA / PCA written recommendation, not a FIFRA or state
--- pesticide-use report, and not a yield or NDVI model. Licensed agronomists
--- still write recommendations on their own forms.
+-- NOT A RECOMMENDATION, NOT A RECEITUÁRIO, NOT AN OFFICIAL AGRONOMIC
+-- PRESCRIPTION, NOT A NAPIS FILING, AND NOT A SPRAY LOG. scout_log is the
+-- owner's local extract of growth stage, pest count, and pest type from the
+-- Scout Record. It is not a CCA / PCA written recommendation, not a Brazilian
+-- receituário agronômico, not a FIFRA or state pesticide-use report, not a
+-- NAPIS / official pest-survey submission, and not a yield or NDVI model.
+-- Licensed agronomists still write recommendations on their own forms.
 --
 -- PRIVACY: fields.access_notes (gate, muddy approach, dog, "park at the
 -- south corner") and scouts.license_no (CCA / PCA number) live ONLY in this
@@ -102,7 +104,7 @@ CREATE TABLE IF NOT EXISTS fields (
   field_id INTEGER PRIMARY KEY AUTOINCREMENT,
   grower_id INTEGER NOT NULL,
   field_name TEXT NOT NULL,                         -- 'North 80', 'Block 12'
-  field_label TEXT,                                 -- sent to ZenSched: 'Rivera - North 80' (keep ≤50)
+  field_label TEXT,                                 -- sent to ZenSched: 'North 80' or 'South 40 - County road 15' (keep ≤50; never grower name)
   crop TEXT,                                        -- 'corn', 'soy', 'wheat', 'cotton', 'cane'
   acres REAL,
   county TEXT,

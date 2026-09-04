@@ -27,7 +27,7 @@ sqlite_execute: UPDATE settings SET value = 'Prairie Scout' WHERE key = 'busines
 sqlite_execute: UPDATE settings SET value = '-05:00' WHERE key = 'timezone_offset';
 ```
 
-> Saved. I'll schedule everything in Central time (-05:00). You don't have a Scout Record form yet; it's free to create and every walk will come back with growth stage, pest count, pest type, and up to 2 canopy photos. No signature — this is an internal scout record, not a CCA recommendation and not a spray log. Want me to set it up now?
+> Saved. I'll schedule everything in Central time (-05:00). You don't have a Scout Record form yet; it's free to create and every walk will come back with growth stage, pest count, pest type, and up to 2 canopy photos. No signature — this is an internal scout record, not a CCA recommendation, not a receituário or official agronomic prescription, not a NAPIS report, and not a spray log. Want me to set it up now?
 
 Owner: *"yes"*
 
@@ -41,7 +41,7 @@ form_create:
 ```json
 [
   {"type": "section", "label": "Scout record", "identifier": "sec_scout",
-   "text": "Walk the field from the GPS corner. Count pests the way this grower asked (per plant, per 20 plants, or per sweep). Two canopy photos help. This is an internal scout record, not a CCA recommendation and not a spray log."},
+   "text": "Walk the field from the GPS corner. Count pests the way this grower asked (per plant, per 20 plants, or per sweep). Two canopy photos help. This is an internal scout record, not a CCA recommendation, not a receituário or official agronomic prescription, not a NAPIS report, and not a spray log."},
   {"type": "select", "label": "Growth stage", "identifier": "growth_stage", "required": true,
    "options": ["Emergence", "Vegetative", "Flowering", "Grain fill", "Mature", "Post-harvest"]},
   {"type": "number", "label": "Pest count", "identifier": "pest_count", "required": true},
@@ -74,7 +74,7 @@ sqlite_execute:
   INSERT INTO fields (grower_id, field_name, field_label, crop, acres, county,
                       corner_lat, corner_lng, access_notes, service_id, service_rate,
                       service_frequency, next_service_date, preferred_start)
-  VALUES (1, 'North 80', 'Rivera - North 80', 'corn', 80, 'Story',
+  VALUES (1, 'North 80', 'North 80', 'corn', 80, 'Story',
           42.0308, -93.6319, 'South approach. Muddy after rain — park on the gravel, not the rows.',
           1, 125.00, 'weekly', '2026-09-07', '07:00');
   → lastInsertRowid = 1
@@ -88,7 +88,7 @@ Owner: *"yes"*
 
 ```
 location_create:
-  name: "Rivera - North 80"
+  name: "North 80"
   lat: 42.0308
   lng: -93.6319
   checkin_radius_m: 200
@@ -138,13 +138,13 @@ sqlite_execute:
   INSERT INTO fields (grower_id, field_name, field_label, crop, acres, nearest_road,
                       corner_lat, corner_lng, access_notes, service_id, service_rate,
                       service_frequency, next_service_date, preferred_start)
-  VALUES (2, 'South 40', 'Chen - South 40', 'soy', 40, 'County road 15',
+  VALUES (2, 'South 40', 'South 40 - County road 15', 'soy', 40, 'County road 15',
           42.0180, -93.6100, 'No gate. Enter from CR 15.',
           2, 180.00, 'on-demand', '2026-09-08', '09:00');
   → lastInsertRowid = 2
 
 location_create:
-  name: "Chen - South 40"
+  name: "South 40 - County road 15"
   lat: 42.0180
   lng: -93.6100
   checkin_radius_m: 200
@@ -166,7 +166,7 @@ sqlite_execute:
   WHERE field_id = 2;
 ```
 
-> Added Chen Family Farm, South 40 (soy, 40 ac). One-off disease scout at $180, Tuesday Sep 8 at 9:00. Same Scout Record — Priya will mark Disease. This is not a written recommendation; if Maya wants a rec, that's still your letterhead. Approach note is local only.
+> Added Chen Family Farm, South 40 (soy, 40 ac). One-off disease scout at $180, Tuesday Sep 8 at 9:00. Same Scout Record — Priya will mark Disease. This is not a written recommendation, receituário, or NAPIS filing; if Maya wants a rec, that's still your letterhead. Approach note is local only. The ZenSched label is "South 40 - County road 15" — no grower name.
 
 ## "Invite Priya Shah, priya@example.com, and make her the default. Set the check-in radius to 300 m."
 
@@ -323,7 +323,7 @@ sqlite_execute:
 
 > Recorded 2 visits, both GPS-verified.
 >
-> **Pressure — Tuesday, Chen South 40:** Priya marked Flowering / **Disease / 12**. Two canopy photos. This is not a written rec; if Maya wants one, that's still on you.
+> **Pressure — Tuesday, Chen South 40:** Priya marked Flowering / **Disease / 12**. Two canopy photos. This is not a written rec, receituário, or NAPIS filing; if Maya wants one, that's still on you.
 >
 > Rivera North 80: Vegetative / Aphids / 3. Next due Sep 14. Chen's on-demand date is cleared.
 
@@ -335,7 +335,7 @@ sqlite_query: SELECT * FROM scout_log WHERE scout_date BETWEEN '2026-09-07' AND 
     2026-09-07 | North 80 | corn | Tom Rivera | Vegetative | Aphids | 3 | Priya Shah
 ```
 
-> Your copy from the Scout Record — not a recommendation and not a spray log:
+> Your copy from the Scout Record — not a recommendation, not a receituário or official agronomic prescription, not a NAPIS filing, and not a spray log:
 >
 > | Date | Field | Crop | Stage | Pest | Count | Scout |
 > |---|---|---|---|---|---|---|
@@ -383,6 +383,7 @@ The agent then writes the invoices out as text:
 >
 > Total due: $125.00
 > Visit GPS-verified at the field corner.
+> Not a spray order, receituário, official agronomic prescription, or NAPIS filing.
 > ```
 >
 > ```
@@ -395,6 +396,7 @@ The agent then writes the invoices out as text:
 >
 > Total due: $180.00
 > Visit GPS-verified at the field corner.
+> Not a spray order, receituário, official agronomic prescription, or NAPIS filing.
 > ```
 >
 > Say "sent" when they're out and I'll note the date.
@@ -410,9 +412,15 @@ sqlite_execute: UPDATE invoices SET paid = 1, paid_date = date('now') WHERE invo
 
 ## Eight weeks later: "Schedule this week."
 
+US Central DST ended the first Sunday of November (2026-11-01). Ames is now `-06:00`. Brazil and India would skip this step.
+
 ```
+sqlite_execute: UPDATE settings SET value = '-06:00' WHERE key = 'timezone_offset';
+
 sqlite_query: SELECT * FROM fields_due;
-  → 2026-11-09 | Tom Rivera | North 80 | weekly | evt 7201 | event_valid_until 2026-11-05 | event_needs_roll 1 | ...
+  → 2026-11-09 | Tom Rivera | North 80 | weekly | evt 7201 | event_valid_until 2026-11-05 | event_needs_roll 1
+               | start_iso 2026-11-09T07:00:00-06:00 | end_iso 2026-11-09T07:45:00-06:00
+               | shift-field-1-20261109
 
 event_create:
   location_id: 9201
@@ -429,7 +437,11 @@ shift_create: event_id 7301, worker_id 601, start "2026-11-09T07:00:00-06:00",
               end "2026-11-09T07:45:00-06:00", idempotency_key "shift-field-1-20261109"
 ```
 
-> Scheduled Rivera North 80 for Mon Nov 9 7:00. The ZenSched event was about to expire (Nov 5), so I renewed it through Jan 7. Chen has no next date (on-demand) so South 40 is not on this week's list.
+> Scheduled Rivera North 80 for Mon Nov 9 7:00 (`-06:00` after the clocks changed). The ZenSched event was about to expire (Nov 5), so I renewed it through Jan 7 — still a 60-day window, not a 90-day season event. Chen has no next date (on-demand) so South 40 is not on this week's list.
+
+## Seasonal +90: "Add a seasonal tissue sample on the Bottom 40, next walk 2026-09-07."
+
+Local cadence is +90 after each recorded visit. The ZenSched event is still `start + 59 days`. After the Sep 7 walk is recorded, `next_service_date` becomes `2026-12-06`. That date is past `event_valid_until`, so the next schedule **rolls a new event** (`event-field-{id}-20261206`) — it does not stretch the first event to 90 days, and the new shift key is `shift-field-{id}-20261206` (no collision with `…-20260907`).
 
 ## Summary of who stored what
 
